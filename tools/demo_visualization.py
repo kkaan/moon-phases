@@ -6,6 +6,9 @@ This demonstrates the visualization that the Android app will show
 from PIL import Image, ImageDraw, ImageFont
 import math
 
+# Constants
+SUN_ANGLE = math.pi  # Sun is positioned on the left (at angle π)
+
 def draw_moon_phase_visualization(phase, output_file):
     """
     Draw a visualization of sun, earth, moon positions for a given phase
@@ -82,8 +85,7 @@ def draw_moon_phase_visualization(phase, output_file):
                  fill=(192, 192, 192))
     
     # Calculate shadow for moon phase
-    sun_angle = math.pi  # Sun is on the left
-    lit_side_angle = sun_angle - moon_angle
+    lit_side_angle = SUN_ANGLE - moon_angle
     shadow_amount = math.cos(lit_side_angle)
     
     # Draw shadow on moon
@@ -103,7 +105,8 @@ def draw_moon_phase_visualization(phase, output_file):
     # Add labels
     try:
         font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 20)
-    except:
+    except (FileNotFoundError, OSError):
+        # Fall back to default font if DejaVu Sans is not available
         font = None
     
     # Phase name

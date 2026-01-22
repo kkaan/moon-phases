@@ -17,6 +17,10 @@ class MoonPhaseView @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
 
+    companion object {
+        private const val FULL_CIRCLE_RADIANS = 2 * Math.PI
+    }
+
     private var moonPhase = 0f
     
     private val sunPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -81,7 +85,7 @@ class MoonPhaseView @JvmOverloads constructor(
         canvas.drawCircle(centerX, centerY, orbitRadius, orbitPaint)
         
         // Calculate moon position based on phase (0 = new moon = between earth and sun)
-        val moonAngle = moonPhase * 2 * Math.PI
+        val moonAngle = moonPhase * FULL_CIRCLE_RADIANS
         val moonX = centerX + (orbitRadius * cos(moonAngle)).toFloat()
         val moonY = centerY + (orbitRadius * sin(moonAngle)).toFloat()
         
