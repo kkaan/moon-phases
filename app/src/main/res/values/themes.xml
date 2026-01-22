@@ -1,0 +1,19 @@
+<resources>
+    <style name="Theme.MoonPhases" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
+        <item name="colorPrimary">#1A237E</item>
+        <item name="colorPrimaryVariant">#000051</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorSecondary">#FFC107</item>
+        <item name="colorSecondaryVariant">#C79100</item>
+        <item name="colorOnSecondary">#000000</item>
+        <item name="android:statusBarColor">@color/black</item>
+    </style>
+    
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="space_background">#0A0E27</color>
+    <color name="sun_yellow">#FDB813</color>
+    <color name="earth_blue">#4A90E2</color>
+    <color name="moon_gray">#C0C0C0</color>
+    <color name="light_ray">#FFF9C4</color>
+</resources>
