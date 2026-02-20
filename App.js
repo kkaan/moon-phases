@@ -96,7 +96,10 @@ export default function App() {
   const moonX = CENTER_X + ORBIT_RADIUS * Math.sin((angle * Math.PI) / 180);
   const moonY = CENTER_Y - ORBIT_RADIUS * Math.cos((angle * Math.PI) / 180);
 
-  const phaseName = getPhaseName(angle);
+  // +90° offset because the sun is to the left (270° in our coordinate system)
+  // so angle 0° (top) is actually First Quarter, not New Moon
+  const phaseAngle = angle + 90;
+  const phaseName = getPhaseName(phaseAngle);
 
   // Sun rays come from the left in the top-down view
   const sunX = CENTER_X - SCREEN_WIDTH * 0.42;
@@ -277,7 +280,7 @@ export default function App() {
         <View style={styles.earthViewMoon}>
           <Svg width={80} height={80} viewBox="-40 -40 80 80">
             <Circle r={30} fill="#222" />
-            <Path d={moonPhasePath(angle, 30)} fill="#F5F5DC" />
+            <Path d={moonPhasePath(phaseAngle, 30)} fill="#F5F5DC" />
           </Svg>
         </View>
       </View>
