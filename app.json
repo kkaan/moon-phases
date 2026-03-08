@@ -22,10 +22,17 @@
         "backgroundColor": "#0a0e1a"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.moonphases.app"
+      "package": "com.moonphases.app",
+      "permissions": []
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "f9c5a8ca-0cec-4582-8d8a-9526cc6811a4"
+      }
+    },
+    "owner": "kkaan"
   }
 }
