@@ -261,7 +261,6 @@
     }
 
     .device-mockup {
-      display: inline-block;
       background: #111628;
       border: 2px solid #1a2040;
       border-radius: 32px;
@@ -392,6 +391,7 @@
     @media (prefers-reduced-motion: reduce) {
       .parallax-container {
         perspective: none;
+        scroll-behavior: auto;
       }
       .parallax-hero {
         transform-style: flat;
@@ -435,17 +435,17 @@
 
     <!-- Layer 1: Background — Stars + Moon -->
     <div class="parallax-layer layer-bg">
-      <img src="images/bg-stars.webp" alt="" loading="eager">
+      <img src="images/bg-stars.webp" alt="" loading="eager" fetchpriority="high">
     </div>
 
     <!-- Layer 2: Midground — Landscape Silhouette -->
     <div class="parallax-layer layer-mg">
-      <img src="images/mg-landscape.webp" alt="" loading="eager">
+      <img src="images/mg-landscape.webp" alt="" loading="lazy" decoding="async">
     </div>
 
     <!-- Layer 3: Foreground — Foliage -->
     <div class="parallax-layer layer-fg">
-      <img src="images/fg-foliage.webp" alt="" loading="eager">
+      <img src="images/fg-foliage.webp" alt="" loading="lazy" decoding="async">
     </div>
 
     <!-- Hero Content -->
@@ -453,7 +453,7 @@
       <h1 class="hero-title">Moon Phases</h1>
       <p class="hero-tagline">Understand the lunar cycle through interactive simulation</p>
       <div class="scroll-indicator">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9a9ab0" stroke-width="2">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9a9ab0" stroke-width="2" aria-hidden="true" focusable="false">
           <polyline points="6 9 12 15 18 9"/>
         </svg>
       </div>
@@ -473,9 +473,9 @@
       <div class="moon-animation-container">
         <svg id="moonCycleSvg" width="120" height="120" viewBox="-65 -65 130 130">
           <circle cx="0" cy="0" r="60" fill="#1a1a2e"/>
-          <path id="moonPhasePath" d="" fill="#F5F5DC"/>
+          <path id="moonPhasePath" d="M -30 0 a 30 30 0 1 0 60 0 a 30 30 0 1 0 -60 0" fill="#F5F5DC"/>
         </svg>
-        <span class="phase-label" id="phaseLabel">Full Moon</span>
+        <span class="phase-label" id="phaseLabel">New Moon</span>
       </div>
     </section>
 
@@ -633,15 +633,29 @@
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (prefersReduced) return;
 
+    const targets = document.querySelectorAll('.fade-in, .fade-in-children');
+
+    if (!('IntersectionObserver' in window)) {
+      targets.forEach(function(el) { el.classList.add('visible'); });
+      return;
+    }
+
+    let remaining = targets.length;
+
     const observer = new IntersectionObserver(function(entries) {
       entries.forEach(function(entry) {
         if (entry.isIntersecting) {
           entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+          remaining--;
+          if (remaining <= 0) {
+            observer.disconnect();
+          }
         }
       });
     }, { threshold: 0.15 });
 
-    document.querySelectorAll('.fade-in, .fade-in-children').forEach(function(el) {
+    targets.forEach(function(el) {
       observer.observe(el);
     });
   })();
