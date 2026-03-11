@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Moon Phases — Interactive Lunar Simulation</title>
+  <meta name="description" content="Understand the lunar cycle through interactive simulation. Drag the moon around Earth's orbit and watch phases change in real time. Free, no ads, no data collection.">
+  <link rel="icon" href="images/icon.png" type="image/png">
+  <link rel="canonical" href="https://kkaan.github.io/moon-phases/">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Moon Phases — Interactive Lunar Simulation">
+  <meta property="og:description" content="Drag the moon around Earth's orbit and watch phases change in real time. Free educational app.">
+  <meta property="og:image" content="https://kkaan.github.io/moon-phases/images/icon.png">
+  <meta property="og:url" content="https://kkaan.github.io/moon-phases/">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+      background: #0a0e1a;
+      color: #9a9ab0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Parallax Container ── */
+    .parallax-container {
+      height: 100vh;
+      overflow-x: hidden;
+      overflow-y: auto;
+      perspective: 1px;
+      perspective-origin: center top;
+      scroll-behavior: smooth;
+    }
+
+    /* ── Parallax Hero ── */
+    .parallax-hero {
+      position: relative;
+      height: 100vh;
+      min-height: 500px;
+      transform-style: preserve-3d;
+    }
+
+    .parallax-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    /* Background: Stars + Moon (slowest scroll) */
+    .layer-bg {
+      transform: translateZ(-2px) scale(3);
+      z-index: 1;
+      overflow: hidden;
+    }
+
+    .layer-bg img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 30%;
+    }
+
+    /* Midground: Landscape silhouette (medium scroll) */
+    .layer-mg {
+      transform: translateZ(-1px) scale(2);
+      z-index: 2;
+    }
+
+    .layer-mg img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center bottom;
+    }
+
+    /* Foreground: Foliage (normal scroll speed) */
+    .layer-fg {
+      transform: translateZ(0);
+      z-index: 3;
+    }
+
+    .layer-fg img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center bottom;
+    }
+
+    /* Hero content overlay */
+    .hero-content {
+      position: absolute;
+      inset: 0;
+      transform: translateZ(-0.5px) scale(1.5);
+      z-index: 4;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      pointer-events: none;
+      padding: 0 20px;
+      padding-bottom: 15vh;
+    }
+
+    .hero-content > * {
+      pointer-events: auto;
+    }
+
+    .hero-title {
+      font-size: clamp(2.5rem, 6vw, 4rem);
+      font-weight: 700;
+      color: #F5F5DC;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+      text-shadow: 0 2px 20px rgba(0,0,0,0.5);
+    }
+
+    .hero-tagline {
+      font-size: clamp(1rem, 2.5vw, 1.25rem);
+      color: #b0b0c8;
+      max-width: 500px;
+      margin-bottom: 40px;
+      text-shadow: 0 1px 10px rgba(0,0,0,0.5);
+    }
+
+    .scroll-indicator {
+      animation: bounce 2s ease-in-out infinite;
+      opacity: 0.5;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(10px); }
+    }
+
+    /* Hero bottom fade */
+    .hero-fade {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 200px;
+      background: linear-gradient(transparent, #0a0e1a);
+      z-index: 5;
+      pointer-events: none;
+    }
+
+    /* ── Content Sections ── */
+    .content-sections {
+      position: relative;
+      z-index: 10;
+      background: #0a0e1a;
+    }
+
+    section {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 80px 24px;
+    }
+
+    .section-title {
+      font-size: clamp(1.5rem, 3vw, 2.25rem);
+      font-weight: 700;
+      color: #F5F5DC;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .section-subtitle {
+      text-align: center;
+      max-width: 600px;
+      margin: 0 auto 48px;
+      font-size: 1.05rem;
+    }
+
+    /* ── Intro Section ── */
+    .intro-section {
+      text-align: center;
+    }
+
+    .intro-text {
+      max-width: 640px;
+      margin: 0 auto 48px;
+      font-size: 1.1rem;
+      line-height: 1.8;
+    }
+
+    .moon-animation-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .moon-animation-container svg {
+      filter: drop-shadow(0 0 12px rgba(245,245,220,0.15));
+    }
+
+    .phase-label {
+      color: #F5F5DC;
+      font-size: 0.95rem;
+      font-weight: 600;
+      min-height: 1.6em;
+    }
+
+    /* ── Features Grid ── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 24px;
+    }
+
+    .feature-card {
+      background: #111628;
+      border: 1px solid #1a2040;
+      border-radius: 16px;
+      padding: 32px 24px;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+    }
+
+    .feature-icon {
+      margin-bottom: 16px;
+    }
+
+    .feature-card h3 {
+      color: #F5F5DC;
+      font-size: 1.15rem;
+      margin-bottom: 8px;
+    }
+
+    .feature-card p {
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    /* ── Preview Section ── */
+    .preview-section {
+      text-align: center;
+    }
+
+    .device-mockup {
+      display: inline-block;
+      background: #111628;
+      border: 2px solid #1a2040;
+      border-radius: 32px;
+      padding: 16px;
+      width: 280px;
+      height: 560px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #555570;
+      font-size: 0.9rem;
+      margin: 0 auto;
+    }
+
+    .device-mockup img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 20px;
+    }
+
+    .device-mockup .placeholder-text {
+      padding: 20px;
+    }
+
+    /* ── CTA Section ── */
+    .cta-section {
+      text-align: center;
+      padding: 100px 24px;
+    }
+
+    .cta-title {
+      font-size: clamp(1.8rem, 4vw, 2.5rem);
+      font-weight: 700;
+      color: #F5F5DC;
+      margin-bottom: 24px;
+    }
+
+    .cta-badge {
+      display: inline-block;
+      margin-bottom: 24px;
+      transition: transform 0.2s ease;
+    }
+
+    .cta-badge:hover {
+      transform: scale(1.05);
+    }
+
+    .cta-badge img {
+      height: 60px;
+    }
+
+    /* Styled Play Store link when badge image isn't available */
+    .store-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      background: #111628;
+      border: 2px solid #1a2040;
+      border-radius: 12px;
+      padding: 14px 28px;
+      color: #F5F5DC;
+      text-decoration: none;
+      font-size: 1.1rem;
+      font-weight: 600;
+      transition: background 0.2s ease, transform 0.2s ease;
+      margin-bottom: 24px;
+    }
+
+    .store-button:hover {
+      background: #1a2040;
+      transform: translateY(-2px);
+    }
+
+    .store-button svg {
+      flex-shrink: 0;
+    }
+
+    .cta-note {
+      color: #555570;
+      font-size: 0.95rem;
+    }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid #1a2040;
+      padding: 40px 24px;
+      text-align: center;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .footer-links a {
+      color: #4FC3F7;
+      text-decoration: none;
+      font-size: 0.95rem;
+      transition: color 0.2s ease;
+    }
+
+    .footer-links a:hover {
+      color: #81D4FA;
+    }
+
+    .footer-copy {
+      color: #555570;
+      font-size: 0.85rem;
+    }
+
+    /* ── Fade-in animations ── */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Stagger children */
+    .fade-in-children > * {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+    .fade-in-children.visible > *:nth-child(1) { transition-delay: 0s; opacity: 1; transform: translateY(0); }
+    .fade-in-children.visible > *:nth-child(2) { transition-delay: 0.15s; opacity: 1; transform: translateY(0); }
+    .fade-in-children.visible > *:nth-child(3) { transition-delay: 0.3s; opacity: 1; transform: translateY(0); }
+
+    /* ── Reduced motion ── */
+    @media (prefers-reduced-motion: reduce) {
+      .parallax-container {
+        perspective: none;
+      }
+      .parallax-hero {
+        transform-style: flat;
+      }
+      .layer-bg, .layer-mg, .layer-fg, .hero-content {
+        transform: none;
+      }
+      .scroll-indicator {
+        animation: none;
+      }
+      .fade-in {
+        opacity: 1;
+        transform: none;
+        transition: none;
+      }
+      .fade-in-children > * {
+        opacity: 1;
+        transform: none;
+        transition: none;
+      }
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      section {
+        padding: 60px 20px;
+      }
+      .device-mockup {
+        width: 240px;
+        height: 480px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="parallax-container">
+
+  <!-- ═══════════ PARALLAX HERO ═══════════ -->
+  <div class="parallax-hero">
+
+    <!-- Layer 1: Background — Stars + Moon -->
+    <div class="parallax-layer layer-bg">
+      <img src="images/bg-stars.webp" alt="" loading="eager">
+    </div>
+
+    <!-- Layer 2: Midground — Landscape Silhouette -->
+    <div class="parallax-layer layer-mg">
+      <img src="images/mg-landscape.webp" alt="" loading="eager">
+    </div>
+
+    <!-- Layer 3: Foreground — Foliage -->
+    <div class="parallax-layer layer-fg">
+      <img src="images/fg-foliage.webp" alt="" loading="eager">
+    </div>
+
+    <!-- Hero Content -->
+    <div class="hero-content">
+      <h1 class="hero-title">Moon Phases</h1>
+      <p class="hero-tagline">Understand the lunar cycle through interactive simulation</p>
+      <div class="scroll-indicator">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9a9ab0" stroke-width="2">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="hero-fade"></div>
+  </div>
+
+  <!-- ═══════════ CONTENT SECTIONS ═══════════ -->
+  <div class="content-sections">
+
+    <!-- ── Intro ── -->
+    <section class="intro-section fade-in">
+      <p class="intro-text">
+        Ever wondered why the Moon changes shape each night? Moon Phases lets you drag the Moon around Earth's orbit and see exactly how its illumination changes — in real time, from both a top-down orbital view and the perspective you see from Earth.
+      </p>
+      <div class="moon-animation-container">
+        <svg id="moonCycleSvg" width="120" height="120" viewBox="-65 -65 130 130">
+          <circle cx="0" cy="0" r="60" fill="#1a1a2e"/>
+          <path id="moonPhasePath" d="" fill="#F5F5DC"/>
+        </svg>
+        <span class="phase-label" id="phaseLabel">Full Moon</span>
+      </div>
+    </section>
+
+    <!-- ── Features ── -->
+    <section>
+      <h2 class="section-title fade-in">How It Works</h2>
+      <p class="section-subtitle fade-in">A hands-on way to learn what causes each lunar phase</p>
+      <div class="features-grid fade-in-children">
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="20" cy="20" r="18" stroke="#4FC3F7" stroke-width="1.5" stroke-dasharray="4 3" opacity="0.5"/>
+              <circle cx="20" cy="4" r="4" fill="#F5F5DC"/>
+              <circle cx="20" cy="20" r="6" fill="#4FC3F7" opacity="0.7"/>
+              <path d="M26 4 L30 1 M26 4 L30 7" stroke="#FFD54F" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <h3>Interactive Orbit</h3>
+          <p>Drag the Moon around Earth and watch how its position relative to the Sun determines the phase you see.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="2" y="2" width="16" height="16" rx="3" stroke="#4FC3F7" stroke-width="1.5" opacity="0.6"/>
+              <rect x="22" y="22" width="16" height="16" rx="3" stroke="#FFD54F" stroke-width="1.5" opacity="0.6"/>
+              <path d="M18 10 L22 10 M10 18 L10 22" stroke="#9a9ab0" stroke-width="1" stroke-dasharray="2 2"/>
+              <circle cx="10" cy="10" r="3" fill="#4FC3F7" opacity="0.5"/>
+              <circle cx="30" cy="30" r="4" fill="#F5F5DC"/>
+            </svg>
+          </div>
+          <h3>Learn Visually</h3>
+          <p>See the orbital diagram and Earth-view side by side. Understand why the lit side changes as the Moon orbits.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="8" cy="10" r="5" fill="#1a1a2e" stroke="#555570" stroke-width="1"/>
+              <circle cx="20" cy="8" r="5" fill="#F5F5DC"/>
+              <circle cx="32" cy="10" r="5" fill="#1a1a2e" stroke="#555570" stroke-width="1"/>
+              <path d="M32 10 A5 5 0 0 1 32 10" fill="#F5F5DC"/>
+              <circle cx="8" cy="28" r="5" fill="#1a1a2e" stroke="#555570" stroke-width="1"/>
+              <path d="M8 23 A3 5 0 0 1 8 33" fill="#F5F5DC"/>
+              <circle cx="20" cy="30" r="5" fill="#1a1a2e" stroke="#555570" stroke-width="1"/>
+              <circle cx="32" cy="28" r="5" fill="#1a1a2e" stroke="#555570" stroke-width="1"/>
+              <path d="M32 23 A5 5 0 0 0 32 33 A2 5 0 0 0 32 23" fill="#F5F5DC"/>
+            </svg>
+          </div>
+          <h3>All 8 Phases</h3>
+          <p>From New Moon to Waning Crescent — each phase comes with a clear explanation of what's happening.</p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ── App Preview ── -->
+    <section class="preview-section fade-in">
+      <h2 class="section-title">See It in Action</h2>
+      <p class="section-subtitle">An interactive simulation right on your phone</p>
+      <div class="device-mockup">
+        <div class="placeholder-text">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" style="margin-bottom:12px">
+            <circle cx="24" cy="24" r="20" stroke="#555570" stroke-width="1.5" stroke-dasharray="4 3"/>
+            <circle cx="24" cy="24" r="8" fill="#1a2040"/>
+            <circle cx="24" cy="6" r="4" fill="#555570"/>
+          </svg>
+          <br>App screenshot coming soon
+        </div>
+      </div>
+    </section>
+
+    <!-- ── CTA ── -->
+    <section class="cta-section fade-in">
+      <h2 class="cta-title">Explore the Lunar Cycle</h2>
+      <a href="https://play.google.com/store/apps/details?id=com.moonphases.app" target="_blank" rel="noopener" class="store-button">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="#F5F5DC">
+          <path d="M3.61 1.814L13.793 12 3.61 22.186a.996.996 0 01-.61-.92V2.734a1 1 0 01.61-.92zm10.89 9.48l2.706-2.707-11.46-6.57 8.754 9.277zm2.706 1.412L14.5 15.413l-8.754 9.277 11.46-6.57zm1.405-.708l3.063-1.755a1 1 0 000-1.738l-3.063-1.756L16.3 12l2.31 2.998z"/>
+        </svg>
+        Get it on Google Play
+      </a>
+      <p class="cta-note">Free. No ads. No data collection.</p>
+    </section>
+
+    <!-- ── Footer ── -->
+    <footer>
+      <div class="footer-links">
+        <a href="privacy-policy.html">Privacy Policy</a>
+        <a href="https://github.com/kkaan/moon-phases" target="_blank" rel="noopener">GitHub</a>
+      </div>
+      <p class="footer-copy">&copy; 2026 Moon Phases &middot; Made with curiosity about the cosmos</p>
+    </footer>
+
+  </div>
+</div>
+
+<script>
+  // ── Moon Phase Path (ported from App.js) ──
+  function moonPhasePath(angleDeg, r) {
+    const a = ((angleDeg % 360) + 360) % 360;
+    const phase = a / 360;
+    const illum = (1 - Math.cos(phase * 2 * Math.PI)) / 2;
+    const kx = (2 * illum - 1) * r;
+
+    if (phase < 0.5) {
+      return `M 0 ${-r} A ${r} ${r} 0 0 1 0 ${r} A ${Math.abs(kx)} ${r} 0 0 ${kx >= 0 ? 1 : 0} 0 ${-r} Z`;
+    } else {
+      return `M 0 ${-r} A ${r} ${r} 0 0 0 0 ${r} A ${Math.abs(kx)} ${r} 0 0 ${kx >= 0 ? 0 : 1} 0 ${-r} Z`;
+    }
+  }
+
+  function getPhaseName(angleDeg) {
+    const a = ((angleDeg % 360) + 360) % 360;
+    const names = [
+      'New Moon', 'Waxing Crescent', 'First Quarter', 'Waxing Gibbous',
+      'Full Moon', 'Waning Gibbous', 'Last Quarter', 'Waning Crescent'
+    ];
+    const idx = Math.round(a / 45) % 8;
+    return names[idx];
+  }
+
+  // ── Animate Moon Phase Cycle ──
+  (function() {
+    const pathEl = document.getElementById('moonPhasePath');
+    const labelEl = document.getElementById('phaseLabel');
+    if (!pathEl || !labelEl) return;
+
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) {
+      pathEl.setAttribute('d', moonPhasePath(180, 60));
+      labelEl.textContent = 'Full Moon';
+      return;
+    }
+
+    let angle = 0;
+    const speed = 0.15; // degrees per frame (~60fps → one full cycle in ~40s)
+    let lastPhase = '';
+
+    function animate() {
+      angle = (angle + speed) % 360;
+      pathEl.setAttribute('d', moonPhasePath(angle, 60));
+      const name = getPhaseName(angle);
+      if (name !== lastPhase) {
+        labelEl.textContent = name;
+        lastPhase = name;
+      }
+      requestAnimationFrame(animate);
+    }
+    requestAnimationFrame(animate);
+  })();
+
+  // ── Intersection Observer for Fade-in ──
+  (function() {
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) return;
+
+    const observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.15 });
+
+    document.querySelectorAll('.fade-in, .fade-in-children').forEach(function(el) {
+      observer.observe(el);
+    });
+  })();
+</script>
+
+</body>
+</html>
